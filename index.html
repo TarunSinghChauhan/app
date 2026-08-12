@@ -554,8 +554,9 @@ function renderVisitorCount(n){
 }
 (async function loadVisitorCount(){
   const el = document.getElementById('visitorLine');
+
   // 1) preferred: the artifact's own persistent storage — a real shared
-  //    counter that increments every time anyone opens this page here.
+  //    counter that increments every time anyone opens this page inside Claude.
   if (window.storage && typeof window.storage.set === 'function'){
     try{
       let current = 0;
@@ -567,11 +568,21 @@ function renderVisitorCount(n){
       await window.storage.set('visitor-count', String(next), true);
       renderVisitorCount(next);
       return;
-    }catch(e){ /* fall through to external API */ }
+    }catch(e){ /* fall through to external API for real hosting */ }
   }
-  // 2) fallback for when this file is hosted as a plain static page
-  //    outside Claude, where window.storage doesn't exist. Uses JSONP
-  //    (a <script> tag, not fetch) so it can never be blocked by CORS.
+
+  // 2) real hosting (GitHub Pages etc.): CountAPI's actively-maintained
+  //    replacement, which explicitly supports direct browser fetch/CORS.
+  try{
+    const res = await fetch('https://countapi.mileshilliard.com/api/v1/hit/tarunsinghchauhan-dev-portfolio', {cache:'no-store'});
+    if(!res.ok) throw new Error('bad response');
+    const data = await res.json();
+    const n = parseInt(data.value, 10);
+    if(!isNaN(n)){ renderVisitorCount(n); return; }
+    throw new Error('no count');
+  }catch(e){ /* fall through to last-resort JSONP */ }
+
+  // 3) last resort: the old service, via JSONP so CORS can't block it either.
   loadViaJSONP();
 })();
 
