@@ -38,36 +38,17 @@
   a{color:inherit;text-decoration:none;}
   ::selection{background:var(--accent-glow);color:#fff;}
 
-  /* dot grid backdrop — dense, high-contrast, animated */
+  /* dot grid backdrop */
   .dotgrid{
-    position:absolute; top:0; left:0; right:0; height:340px;
-    background-image:
-      radial-gradient(rgba(255,255,255,0.16) 1px, transparent 1.2px),
-      radial-gradient(rgba(255,255,255,0.09) 1px, transparent 1.2px);
-    background-size: 14px 14px, 14px 14px;
-    background-position: 0 0, 7px 7px;
-    -webkit-mask-image: linear-gradient(to bottom, black, transparent);
-    mask-image: linear-gradient(to bottom, black, transparent);
-    pointer-events:none;
-    animation: dotflicker 5s steps(2) infinite;
-  }
-  @keyframes dotflicker{
-    0%,100%{ opacity:1; }
-    50%{ opacity:0.72; }
-  }
-
-  /* persistent faint pixel-grid across the whole page */
-  .pixelfield{
     position:fixed; inset:0; z-index:0; pointer-events:none;
-    background-image: radial-gradient(rgba(255,255,255,0.055) 1px, transparent 1.2px);
-    background-size: 14px 14px;
-    animation: pixelshift 14s linear infinite;
+    background-image: radial-gradient(rgba(255,255,255,0.16) 0.5px, transparent 0.5px);
+    background-size: 20px 20px;
+    animation: dotdrift 10s linear infinite;
   }
-  @keyframes pixelshift{
+  @keyframes dotdrift{
     0%{ background-position: 0 0; }
-    100%{ background-position: 140px 140px; }
+    100%{ background-position: 20px 20px; }
   }
-
   .wrap{max-width:900px;margin:0 auto;padding:0 24px;position:relative;z-index:1;}
 
   /* ---------- HERO ---------- */
@@ -180,7 +161,6 @@
     background:var(--panel); border:1px solid var(--border); border-radius:18px;
     padding:52px 24px; text-align:center; position:relative; overflow:hidden;
   }
-  .contact-panel .dotgrid{height:100%;}
   .contact-panel h2{font-family:var(--serif);font-size:32px;font-weight:500;position:relative;z-index:2;}
   .contact-panel p{color:var(--text-dim);margin-top:12px;max-width:420px;margin-left:auto;margin-right:auto;position:relative;z-index:2;font-size:15px;}
   .cta-btn{
@@ -258,7 +238,6 @@
 </head>
 <body>
 
-<div class="pixelfield"></div>
 <div class="dotgrid"></div>
 
 <!-- ================= HERO ================= -->
@@ -430,18 +409,19 @@
     </div>
 
     <div class="proj-card" style="grid-column:1/-1;">
-      <div class="proj-top" style="--glowcolor:#4a7a5f;background:linear-gradient(160deg,#101f18,#0e1412);min-height:90px;"><h4>Full company research reports, under 60 seconds</h4></div>
+      <div class="proj-top" style="--glowcolor:#4a7a5f;background:linear-gradient(160deg,#101f18,#0e1412);min-height:90px;"><h4>Knows when not to act alone</h4></div>
       <div class="proj-body">
-        <div class="proj-row1"><span class="proj-name">Autonomous Financial Research Agent</span><span class="badge finished">shipped</span></div>
+        <div class="proj-row1"><span class="proj-name">Human-in-the-Loop Approval Agent</span><span class="badge finished">shipped</span></div>
         <div class="proj-date">Personal Project</div>
-        <p class="proj-desc">A tool-augmented agent that runs a 4-step reasoning chain — market context, financial
-          analysis, risk assessment, investment thesis — over Yahoo Finance and DuckDuckGo, with a per-query
-          cost budget of $0.50. Every report ships with a SHA-256 reproducibility hash and a full tool-call
-          audit trail; Redis caching cuts repeated-query cost by ~60%.</p>
+        <p class="proj-desc">An agent that scores its own confidence before acting: high-confidence tasks
+          execute automatically, while low-confidence, ambiguous, or irreversible ones pause and wait for
+          a human to approve or reject — with a full audit trail of every state transition. Building it
+          surfaced a real safety loophole in the confidence check itself, which became part of the point:
+          knowing when an agent shouldn't act alone matters as much as what it can do.</p>
         <div class="proj-tags">
-          <span class="tag">OpenRouter</span><span class="tag">Yahoo Finance API</span><span class="tag">LangSmith</span><span class="tag">Redis</span><span class="tag">Docker</span>
+          <span class="tag">Next.js 14</span><span class="tag">Prisma</span><span class="tag">Groq</span><span class="tag">PostgreSQL</span>
         </div>
-        <div class="proj-links"><a class="lnk" href="https://github.com/TarunSinghChauhan/finance-research-agent" target="_blank">GitHub ↗</a></div>
+        <div class="proj-links"><a class="lnk" href="https://github.com/TarunSinghChauhan/hitl-approval-agent" target="_blank">GitHub ↗</a></div>
       </div>
     </div>
 
@@ -451,7 +431,6 @@
 <!-- ================= CONTACT ================= -->
 <section class="section wrap">
   <div class="contact-panel">
-    <div class="dotgrid"></div>
     <h2>Let's talk</h2>
     <p>Building something that needs an agent, an eval harness, or a RAG pipeline that doesn't drift silently? Email is the fastest way to reach me.</p>
     <a class="cta-btn" id="emailBtn" href="mailto:tarunsinghchauhan088@gmail.com?subject=Let%27s%20talk">Email me</a>
