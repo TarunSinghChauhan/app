@@ -229,6 +229,24 @@
 
   footer{text-align:center;padding:30px 0 130px;font-size:12px;color:var(--text-faint);font-family:var(--mono);}
 
+  /* ---------- CURSOR DOG (pixel art, oneko-style) ---------- */
+  .cursor-dog{
+    position:fixed; top:0; left:0; width:50px; height:38px;
+    pointer-events:none; z-index:10000; opacity:0;
+    transition:opacity .3s ease;
+    image-rendering:pixelated; image-rendering:crisp-edges;
+    filter:drop-shadow(0 3px 4px rgba(0,0,0,0.5));
+    background-repeat:no-repeat; background-size:contain; background-position:center bottom;
+  }
+  .cursor-dog.walking{ animation: dogRunBounce 0.26s steps(2) infinite; }
+  @keyframes dogRunBounce{
+    0%,100%{ margin-top:0px; }
+    50%{ margin-top:-3px; }
+  }
+  @media (hover:none), (pointer:coarse){
+    .cursor-dog{ display:none; }
+  }
+
   @media(max-width:600px){
     .id-name{font-size:23px;}
     .meta-block{display:none;}
@@ -237,6 +255,8 @@
 </style>
 </head>
 <body>
+
+<div class="cursor-dog" id="cursorDog" aria-hidden="true"></div>
 
 <div class="dotgrid"></div>
 
@@ -550,18 +570,9 @@ function renderVisitorCount(n){
     }catch(e){ /* fall through to external API for real hosting */ }
   }
 
-  // 2) real hosting (GitHub Pages etc.): CountAPI's actively-maintained
-  //    replacement, which explicitly supports direct browser fetch/CORS.
-  try{
-    const res = await fetch('https://countapi.mileshilliard.com/api/v1/hit/tarunsinghchauhan-dev-portfolio', {cache:'no-store'});
-    if(!res.ok) throw new Error('bad response');
-    const data = await res.json();
-    const n = parseInt(data.value, 10);
-    if(!isNaN(n)){ renderVisitorCount(n); return; }
-    throw new Error('no count');
-  }catch(e){ /* fall through to last-resort JSONP */ }
-
-  // 3) last resort: the old service, via JSONP so CORS can't block it either.
+  // 2) real hosting (GitHub Pages, Vercel, etc.): JSONP loads as a <script>
+  //    tag, not a fetch, so it's structurally immune to CORS blocking —
+  //    this is the most reliable cross-host method.
   loadViaJSONP();
 })();
 
@@ -574,8 +585,8 @@ function loadViaJSONP(){
     if(settled) return;
     settled = true;
     cleanup();
-    el.textContent = 'Thanks for stopping by.';
-  }, 5000);
+    loadViaFetchFallback();
+  }, 4000);
 
   function cleanup(){
     clearTimeout(timeout);
@@ -589,7 +600,7 @@ function loadViaJSONP(){
     cleanup();
     const n = data && (typeof data.value === 'number' ? data.value : parseInt(data.value,10));
     if(!isNaN(n) && n){ renderVisitorCount(n); }
-    else { el.textContent = 'Thanks for stopping by.'; }
+    else { loadViaFetchFallback(); }
   };
 
   const script = document.createElement('script');
@@ -598,9 +609,22 @@ function loadViaJSONP(){
     if(settled) return;
     settled = true;
     cleanup();
-    el.textContent = 'Thanks for stopping by.';
+    loadViaFetchFallback();
   };
   document.body.appendChild(script);
+}
+
+// 3) last resort: a plain fetch to a second, independently-hosted counter.
+function loadViaFetchFallback(){
+  const el = document.getElementById('visitorLine');
+  fetch('https://countapi.mileshilliard.com/api/v1/hit/tarunsinghchauhan-dev-portfolio', {cache:'no-store'})
+    .then(res => { if(!res.ok) throw new Error('bad response'); return res.json(); })
+    .then(data => {
+      const n = parseInt(data.value, 10);
+      if(!isNaN(n)){ renderVisitorCount(n); }
+      else { el.textContent = 'Thanks for stopping by.'; }
+    })
+    .catch(()=>{ el.textContent = 'Thanks for stopping by.'; });
 }
 
 /* ============ GLOBE ============ */
@@ -807,6 +831,79 @@ function loadViaJSONP(){
     requestAnimationFrame(draw);
   }
   requestAnimationFrame(draw);
+})();
+/* ============ CURSOR DOG (pixel art, oneko-style) ============ */
+(function(){
+  const dog = document.getElementById('cursorDog');
+  if(!dog) return;
+  if(!window.matchMedia('(hover:hover) and (pointer:fine)').matches) return;
+
+  const SPRITE_SIT  = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAACKCAYAAACU7Mc1AAADaUlEQVR4nO3dsYrcSBRAUXuZ2NHAhguO/AX+/3i/wJHBoaGj/YHdYBIHU82+RrJ01eeE9tASHl0KXpdLHz9EvL7++e97f367/fw4+fm9re4H9vDH0TcAPE7AECZgCBMwhAkYwk43Mf3n9uPd6fGn17/evdfVz29ldd3plNt0+tqO+tbDCgxhAoYwAUOYgCFMwBC22WR0OoX7/u3vrS49spoqr+w9XTSdbtn7OZ9+62EFhjABQ5iAIUzAECZgCHtZ/cVW09c7U9Z3P//zl6+jz5nunT5qz+rK9KQRzmn6nK+snudVF1ZgCBMwhAkYwgQMYQKGsOUU+mznLT+bvafTV/09Ptv03goMYQKGMAFDmIAhTMAQNt4LPd2T/GG4F5Q3Z5s2T7+V2Pv+n23avGIFhjABQ5iAIUzAECZgCFtOoe+cZ3vIOcl7v4XwbM62V3l6P3vfv+n0GyswhAkYwgQMYQKGMAFD2HIKfZRnmzbv7apT/em531edTluBIUzAECZgCBMwhAkYwpZT6NXb0KauOgU9yp096iuX/HeevpVyb1s9z9PpuhUYwgQMYQKGMAFDmIAh7OVsJz/w5s7eXb+vB9Sf89XzYAWGMAFDmIAhTMAQJmAIe9n7rXOrz1nt+dxqT2l96shjps/PdO/xA3vRd2UFhjABQ5iAIUzAECZgCBufC73VdPeoEwzO5qi3QPKm/hxagSFMwBAmYAgTMIQJGMI2O0N3q72j0/Oop+dOb3Xe9dTZ9tBupb6XeGrv52f6fw2swBAmYAgTMIQJGMIEDGHjvdBTW+0RnZ4cMn1Lnbcl3vds0+a99zZPp80rVmAIEzCECRjCBAxhAoaw3afQW03tznYSCPxqq6nylBUYwgQMYQKGMAFDmIAhbLMp9HSv8t6Oeisi/E5WYAgTMIQJGMIEDGEChrBD9m9e2XSaPT055GzX5VhWYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwnY/F5prc5LJfXvvObcCQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQZi/0g1ZvP/z85eslr8s5WYEhTMAQJmAIEzCECRjCTKEfdLv9POTtfkddl3OyAkOYgCFMwBAmYAgTMISZaPK/rPZg85itvk2wAkOYgCFMwBAmYAgTMIT9B8NDE9v1/AhvAAAAAElFTkSuQmCC";
+  const SPRITE_RUN1 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAACWCAYAAADg+AXVAAADgElEQVR4nO3dsYrcVhSAYTtsnWrAZSBVniDvX+cJUgVSGqbKCyTFNinmDpxBsvSPvq+0F608q58LZ6+vvn6JuN2+/fvoz+/3718nX7+31f3AHn46+gaA1wkYwgQMYQKGMAFD2Okmpv/c/344Pf759svDe119/VZW33c65Tadfm9H/dbDCgxhAoYwAUOYgCFMwBC22WR0OoX7688/tvrWI6up8sre00XT6Za9n/Ppbz2swBAmYAgTMIQJGMIEDGEfq7/Yavr6ZMr68Pq//vb76DrTvdNH7VldmZ40wjlNn/OV1fO86sIKDGEChjABQ5iAIUzAELacQp/tvOWr2Xs6/a4/x6tN763AECZgCBMwhAkYwgQMYeO90NM9yV+Ge0H5dLZp8/S3Envf/9WmzStWYAgTMIQJGMIEDGEChrDlFPrJebaHnJO891sIz+Zse5Wn97P3/ZtOf7ICQ5iAIUzAECZgCBMwhC2n0Ee52rR5b+861Z+e+/2u02krMIQJGMIEDGEChjABQ9hyCr16G9rUu05Bj/Jkj/rKW37O07dS7m2r53k6XbcCQ5iAIUzAECZgCBMwhH2c7eQHPj3Zu+vn9YL6c756HqzAECZgCBMwhAkYwgQMYR97v3VudZ3Vns+t9pTWp468Zvr8TPcev7AXfVdWYAgTMIQJGMIEDGEChrDxudBbTXePOsHgbI56CySf6s+hFRjCBAxhAoYwAUOYgCFsszN0t9o7Oj2Penru9FbnXU+dbQ/tVup7iaf2fn6m/9fACgxhAoYwAUOYgCFMwBA23gs9tdUe0enJIdO31Hlb4nNXmzbvvbd5Om1esQJDmIAhTMAQJmAIEzCE7T6F3mpqd7aTQOD/tpoqT1mBIUzAECZgCBMwhAkYwjabQk/3Ku/tqLciwo9kBYYwAUOYgCFMwBAmYAg7ZP/mO5hOrfc+IWR6/bPxeb7GCgxhAoYwAUOYgCFMwBCWmLSVmKY+5/PZlhUYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoaw9D7QkqvtAb7av/coVmAIEzCECRjCBAxhAoawt5zMldSntfXr11mBIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIu9S+0TO63b6N9vqu3O/fH/4st7r+1N73s7r+1ViBIUzAECZgCBMwhAkYAAAAAAAAAAAAAAD4of4DzShG0ilrHzwAAAAASUVORK5CYII=";
+  const SPRITE_RUN2 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAACWCAYAAADg+AXVAAADeUlEQVR4nO3dsaobVxRAUTu82pXAZSBVvsD/X/sLUgVSGlTlB5JCjQtdwREzntnSWqX90Buk2Vw4uu/O508Rl8vX/+79+/X64/Pk5/e2uh7Yw29HXwDwPAFDmIAhTMAQJmAIO93E9N/rP3enx18uv9+91tXPb2X1e6dTbtPp13bUtx5WYAgTMIQJGMIEDGEChrDNJqPTKdzff33f6lePrKbKK3tPF02nW/a+z6ffeliBIUzAECZgCBMwhAkYwj5W/7HV9PXBlPXu6//x57fR60z3Th+1Z3VletII5zS9z1dW9/OqCyswhAkYwgQMYQKGMAFD2HIKfbbzlt/N3tPpV/0c3216bwWGMAFDmIAhTMAQJmAIG++Fnu5J/jTcC8rN2abN028l9r7+d5s2r1iBIUzAECZgCBMwhAkYwpZT6Afn2R5yTvLeTyE8m7PtVZ5ez97Xbzp9YwWGMAFDmIAhTMAQJmAIW06hj/Ju0+a9vepUf3ru96tOp63AECZgCBMwhAkYwgQMYcsp9OppaFOvOgU9yoM96isv+T5Pn0q5t63u5+l03QoMYQKGMAFDmIAhTMAQ9nG2kx+4ebB31+f1hPp9vrofrMAQJmAIEzCECRjCBAxhH3s/dW71Oqs9n1vtKa1PHXnO9P6Z7j1+Yi/6rqzAECZgCBMwhAkYwgQMYeNzobea7h51gsHZHPUUSG7q96EVGMIEDGEChjABQ5iAIWyzM3S32js6PY96eu70VuddT51tD+1W6nuJp/a+f6Z/a2AFhjABQ5iAIUzAECZgCBvvhZ7aao/o9OSQ6VPqPC3xsXebNu+9t3k6bV6xAkOYgCFMwBAmYAgTMITtPoXeamp3tpNA4GdbTZWnrMAQJmAIEzCECRjCBAxhm02hp3uV93bUUxHhV7ICQ5iAIUzAECZgCBMwhB2yf/MVTKfWe58QMn39s/F+PscKDGEChjABQ5iAIUzAEJaYtB3JdPRY3v/HrMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMISdal/nkey5bfF53ViBIUzAECZgCBMwhAkYwt5u0ml6+dre7fO1AkOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAEJbfh3u5fB3tTV25Xn/cfS/2fn229W73gxUYwgQMYQKGMAFDmIABAAAAAAAAAAAAAIBf6n+YUkrSOZ7E+gAAAABJRU5ErkJggg==";
+
+  const SPEED = 4.2;
+  const CATCH_DIST = 10;
+  const OFFSET_X = 22, OFFSET_Y = 16;
+  const LEG_FRAME_MS = 90; // how fast the legs alternate while running
+
+  let mouseX = window.innerWidth/2, mouseY = window.innerHeight/2;
+  let targetX = mouseX, targetY = mouseY;
+  let curX = mouseX, curY = mouseY;
+  let facing = 1;
+  let running = false;
+  let hasMouse = false;
+  let legToggle = false;
+  let lastLegSwap = 0;
+
+  function setSprite(src){
+    if(dog.dataset.src !== src){
+      dog.style.backgroundImage = 'url(' + src + ')';
+      dog.dataset.src = src;
+    }
+  }
+
+  window.addEventListener('mousemove', (e)=>{
+    mouseX = e.clientX; mouseY = e.clientY;
+    targetX = mouseX + OFFSET_X;
+    targetY = mouseY + OFFSET_Y;
+    if(!hasMouse){ curX = targetX; curY = targetY; }
+    hasMouse = true;
+  });
+
+  function frame(ts){
+    const dx = targetX - curX;
+    const dy = targetY - curY;
+    const dist = Math.hypot(dx, dy);
+
+    if(dist > CATCH_DIST){
+      running = true;
+      const nx = dx / dist, ny = dy / dist;
+      curX += nx * SPEED;
+      curY += ny * SPEED;
+      if(Math.abs(dx) > 2){ facing = dx > 0 ? -1 : 1; } // art faces left by default
+    } else {
+      running = false;
+    }
+
+    dog.classList.toggle('walking', running);
+
+    if(running){
+      if(ts - lastLegSwap > LEG_FRAME_MS){
+        legToggle = !legToggle;
+        lastLegSwap = ts;
+      }
+      setSprite(legToggle ? SPRITE_RUN1 : SPRITE_RUN2);
+    } else {
+      setSprite(SPRITE_SIT);
+    }
+
+    dog.style.transform = 'translate3d(' + curX + 'px,' + curY + 'px,0) translate(-50%,-70%) scaleX(' + facing + ')';
+    dog.style.opacity = hasMouse ? '1' : '0';
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
 })();
 </script>
 </body>
