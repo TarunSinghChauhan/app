@@ -51,6 +51,7 @@
     border-left:1px solid var(--line-soft);
     border-right:1px solid var(--line-soft);
     min-height:100vh;
+    background:var(--bg);
   }
 
   .wrap{
@@ -946,28 +947,64 @@
     });
   })();
 
-  // visitor counter — free counting API, no signup/backend needed
+  // visitor counter — JSONP first (immune to CORS, loads as a <script> tag),
+  // then a plain fetch as backup, then a friendly text fallback.
   (function(){
     const el = document.getElementById('visitorCount');
     if(!el) return;
     const b = el.querySelector('b');
+    const NAMESPACE = 'tarunsinghchauhan-dev-portfolio';
+    const KEY = 'visits';
+
     function ordinal(n){
       const s = ['th','st','nd','rd'];
       const v = n % 100;
       return n + (s[(v-20)%10] || s[v] || s[0]);
     }
-    fetch('https://countapi.mileshilliard.com/api/v1/hit/tarunsinghchauhan-portfolio-visits-v1')
-      .then(r => r.json())
-      .then(data => {
-        if(data && typeof data.value === 'number'){
-          b.textContent = ordinal(data.value);
-        } else {
-          el.textContent = "Thanks for stopping by";
-        }
-      })
-      .catch(()=>{
-        el.textContent = "Thanks for stopping by";
-      });
+    function showCount(n){
+      if(typeof n === 'number' && !isNaN(n)){ b.textContent = ordinal(n); }
+      else { el.textContent = "Thanks for stopping by"; }
+    }
+    function fetchFallback(){
+      fetch(`https://abacus.jasoncameron.dev/hit/${NAMESPACE}/${KEY}`, {cache:'no-store'})
+        .then(r => r.json())
+        .then(data => showCount(data && data.value))
+        .catch(()=>{ el.textContent = "Thanks for stopping by"; });
+    }
+
+    // JSONP: a <script> tag load is not subject to CORS or fetch-blocking,
+    // making it the most reliable cross-host method for a static site.
+    const cbName = '__visitorCb_' + Math.random().toString(36).slice(2);
+    let settled = false;
+    const timeout = setTimeout(()=>{
+      if(settled) return;
+      settled = true;
+      cleanup();
+      fetchFallback();
+    }, 3500);
+
+    function cleanup(){
+      clearTimeout(timeout);
+      delete window[cbName];
+      if(script.parentNode) script.parentNode.removeChild(script);
+    }
+
+    window[cbName] = function(data){
+      if(settled) return;
+      settled = true;
+      cleanup();
+      showCount(data && data.value);
+    };
+
+    const script = document.createElement('script');
+    script.src = `https://abacus.jasoncameron.dev/hit/${NAMESPACE}/${KEY}?callback=${cbName}`;
+    script.onerror = function(){
+      if(settled) return;
+      settled = true;
+      cleanup();
+      fetchFallback();
+    };
+    document.body.appendChild(script);
   })();
 
   /* ============ CURSOR DOG (pixel art, oneko-style) ============ */
