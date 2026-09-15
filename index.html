@@ -29,7 +29,7 @@
 
   *{ box-sizing:border-box; }
 
-  html{ background:var(--bg); scroll-behavior:smooth; }
+  html{ background:var(--bg); scroll-behavior:smooth; overflow-x:hidden; }
 
   body{
     margin:0;
@@ -275,15 +275,20 @@
     flex-direction:column;
     align-items:flex-start;
     gap:14px;
+    max-width:100%;
+    overflow:hidden;
   }
   .gh-cal-scroll{
     width:100%;
+    max-width:100%;
+    min-width:0;
     overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
     padding-bottom:4px;
   }
   .gh-cal-scroll::-webkit-scrollbar{ height:6px; }
   .gh-cal-scroll::-webkit-scrollbar-thumb{ background:var(--line); border-radius:3px; }
-  .gh-cal{ position:relative; }
+  .gh-cal{ position:relative; min-width:0; max-width:100%; }
   .gh-cal-months{
     display:flex;
     font-size:11px;
