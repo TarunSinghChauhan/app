@@ -199,10 +199,11 @@
   /* hero dot band (flat, full-bleed, no card) */
   .hero-dots-wrap{
     position:relative;
-    height:190px;
+    height:120px;
     overflow:hidden;
     border-bottom:1px solid var(--line-soft);
   }
+  @media (max-width:420px){ .hero-dots-wrap{ height:90px; } }
   .profile-block{ padding:24px 0 28px; border-bottom:1px solid var(--line-soft); }
   .avatar{
     width:76px; height:76px;
@@ -264,6 +265,78 @@
   .pill.solid{ background:var(--fg); color:var(--bg); border-color:var(--fg); }
   .pill:hover{ transform:translateY(-1px); border-color:var(--fg); }
   .pill.solid:hover{ background:var(--white); }
+
+  .gh-activity-card{
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:var(--panel);
+    padding:20px 18px 18px;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:14px;
+  }
+  .gh-cal-scroll{
+    width:100%;
+    overflow-x:auto;
+    padding-bottom:4px;
+  }
+  .gh-cal-scroll::-webkit-scrollbar{ height:6px; }
+  .gh-cal-scroll::-webkit-scrollbar-thumb{ background:var(--line); border-radius:3px; }
+  .gh-cal{ position:relative; }
+  .gh-cal-months{
+    display:flex;
+    font-size:11px;
+    color:var(--muted);
+    margin-bottom:4px;
+  }
+  .gh-cal-months span{ flex-shrink:0; }
+  .gh-cal-grid{ display:flex; gap:3px; }
+  .gh-cal-col{ display:flex; flex-direction:column; gap:3px; }
+  .gh-cal-day{
+    width:11px; height:11px;
+    border-radius:2px;
+    background:var(--line-soft);
+    cursor:pointer;
+    transition:outline .1s ease;
+  }
+  .gh-cal-day:hover{ outline:1px solid var(--fg); outline-offset:0; }
+  .gh-cal-day[data-level="1"]{ background:var(--green-1); }
+  .gh-cal-day[data-level="2"]{ background:var(--green-2); }
+  .gh-cal-day[data-level="3"]{ background:var(--green-3); }
+  .gh-cal-day[data-level="4"]{ background:var(--green-4); }
+  .gh-cal-footer{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    width:100%;
+    font-size:12.5px;
+    color:var(--muted);
+    margin-top:2px;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .gh-cal-legend{ display:flex; align-items:center; gap:4px; }
+  .gh-cal-legend .gh-cal-day{ cursor:default; }
+  .gh-cal-legend .gh-cal-day:hover{ outline:none; }
+  .gh-cal-tooltip{
+    position:fixed;
+    z-index:50;
+    background:var(--fg);
+    color:var(--bg);
+    font-size:12px;
+    font-weight:600;
+    padding:6px 10px;
+    border-radius:6px;
+    pointer-events:none;
+    opacity:0;
+    transform:translate(-50%,-100%) translateY(-8px);
+    transition:opacity .1s ease;
+    white-space:nowrap;
+  }
+  .gh-cal-tooltip.show{ opacity:1; }
+  .gh-cal-error{ font-size:13px; color:var(--muted); }
+  .gh-activity-link{ align-self:flex-start; }
 
   section{ padding:38px 0; }
   .section-head{
@@ -764,6 +837,19 @@
       <span class="skill-pill"><span class="dot" style="background:#f55036"></span>Groq API</span>
       <span class="skill-pill"><span class="dot" style="background:#6f42c1"></span>OpenRouter</span>
       <span class="skill-pill"><span class="dot" style="background:#f05032"></span>Git</span>
+    </div>
+  </section>
+
+  <section id="github-activity">
+    <div class="section-head">GitHub Activity</div>
+    <div class="gh-activity-card">
+      <div id="ghCalRoot" class="gh-cal" data-gh-user="TarunSinghChauhan">
+        <div class="gh-cal-error">Loading contribution graph…</div>
+      </div>
+      <a class="pill gh-activity-link" href="https://github.com/TarunSinghChauhan" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.7.5.8 5.4.8 11.7c0 5 3.3 9.3 7.8 10.8.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.2-1.7-1.2-1.7-1-.7.1-.7.1-.7 1.1.1 1.7 1.1 1.7 1.1 1 1.7 2.6 1.2 3.2.9.1-.7.4-1.2.7-1.5-2.5-.3-5.2-1.3-5.2-5.6 0-1.2.4-2.2 1.1-3-.1-.3-.5-1.5.1-3.1 0 0 .9-.3 3 1.1a10.4 10.4 0 0 1 5.5 0c2.1-1.4 3-1.1 3-1.1.6 1.6.2 2.8.1 3.1.7.8 1.1 1.8 1.1 3 0 4.3-2.7 5.3-5.2 5.6.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.5-1.5 7.8-5.8 7.8-10.8C23.2 5.4 18.3.5 12 .5Z"/></svg>
+        View full profile
+      </a>
     </div>
   </section>
 
@@ -1278,6 +1364,168 @@
       requestAnimationFrame(draw);
     }
     requestAnimationFrame(draw);
+  })();
+</script>
+
+<script>
+  // Live GitHub contribution calendar (real data, GitHub-style tooltips)
+  (function(){
+    const root = document.getElementById('ghCalRoot');
+    if(!root) return;
+    const username = root.dataset.ghUser;
+    const API = 'https://github-contributions-api.jogruber.de/v4/' + encodeURIComponent(username) + '?y=last';
+
+    const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    function fmtDate(iso){
+      const d = new Date(iso + 'T00:00:00');
+      return d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+    }
+
+    function buildCalendar(contributions, totalLabel){
+      // Map date -> {count, level}
+      const byDate = {};
+      contributions.forEach(c => { byDate[c.date] = c; });
+
+      // Format a Date using its LOCAL y/m/d (never toISOString, which converts
+      // to UTC and shifts the date backward for timezones ahead of UTC).
+      function localISO(d){
+        const y = d.getFullYear();
+        const m = String(d.getMonth()+1).padStart(2,'0');
+        const day = String(d.getDate()).padStart(2,'0');
+        return `${y}-${m}-${day}`;
+      }
+
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const start = new Date(today);
+      start.setDate(start.getDate() - 364);
+      // Align start to the previous Sunday so weeks line up like GitHub
+      const startDow = start.getDay();
+      start.setDate(start.getDate() - startDow);
+
+      const weeks = [];
+      let cur = new Date(start);
+      while(cur <= today){
+        const week = [];
+        for(let i=0;i<7;i++){
+          const iso = localISO(cur);
+          const entry = byDate[iso];
+          week.push({
+            date: iso,
+            count: entry ? entry.count : 0,
+            level: entry ? entry.level : 0,
+            future: cur > today
+          });
+          cur.setDate(cur.getDate()+1);
+        }
+        weeks.push(week);
+      }
+
+      // Month labels: mark the week where a new month begins
+      const monthLabels = [];
+      let lastMonth = -1;
+      weeks.forEach((week, wi) => {
+        const first = new Date(week[0].date + 'T00:00:00');
+        const m = first.getMonth();
+        if(m !== lastMonth){
+          monthLabels.push({ index: wi, label: MONTH_NAMES[m] });
+          lastMonth = m;
+        }
+      });
+
+      const colWidth = 14; // 11px cell + 3px gap
+
+      const monthsHtml = monthLabels.map(ml =>
+        `<span style="position:absolute; left:${ml.index * colWidth}px;">${ml.label}</span>`
+      ).join('');
+
+      const gridHtml = weeks.map(week => {
+        const days = week.map(day => {
+          if(day.future){
+            return `<div class="gh-cal-day" style="visibility:hidden;"></div>`;
+          }
+          return `<div class="gh-cal-day" data-level="${day.level}" data-date="${day.date}" data-count="${day.count}"></div>`;
+        }).join('');
+        return `<div class="gh-cal-col">${days}</div>`;
+      }).join('');
+
+      root.innerHTML = `
+        <div class="gh-cal-scroll">
+          <div style="min-width:${weeks.length * colWidth}px;">
+            <div class="gh-cal-months" style="position:relative; height:14px;">${monthsHtml}</div>
+            <div class="gh-cal-grid">${gridHtml}</div>
+          </div>
+        </div>
+        <div class="gh-cal-footer">
+          <span>${totalLabel}</span>
+          <div class="gh-cal-legend">
+            Less
+            <div class="gh-cal-day" data-level="0"></div>
+            <div class="gh-cal-day" data-level="1"></div>
+            <div class="gh-cal-day" data-level="2"></div>
+            <div class="gh-cal-day" data-level="3"></div>
+            <div class="gh-cal-day" data-level="4"></div>
+            More
+          </div>
+        </div>
+      `;
+
+      // Tooltip
+      const tip = document.createElement('div');
+      tip.className = 'gh-cal-tooltip';
+      document.body.appendChild(tip);
+
+      root.querySelectorAll('.gh-cal-grid .gh-cal-day[data-date]').forEach(cell => {
+        cell.addEventListener('mouseenter', () => {
+          const count = cell.dataset.count;
+          const date = cell.dataset.date;
+          const label = count === '1' ? '1 contribution' : `${count} contributions`;
+          tip.textContent = `${label} on ${fmtDate(date)}`;
+          const rect = cell.getBoundingClientRect();
+          tip.style.left = (rect.left + rect.width/2) + 'px';
+          tip.style.top = rect.top + 'px';
+          tip.classList.add('show');
+        });
+        cell.addEventListener('mouseleave', () => tip.classList.remove('show'));
+      });
+    }
+
+    function showFallbackImage(reason){
+      console.warn('GitHub activity: falling back to static chart —', reason);
+      root.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:10px; width:100%;">
+          <img
+            src="https://ghchart.rshah.org/2f9450/${username}"
+            alt="${username}'s GitHub contribution graph"
+            style="width:100%; max-width:100%; height:auto; display:block;"
+            loading="lazy"
+            onerror="this.closest('#ghCalRoot').innerHTML='<div class=\\'gh-cal-error\\'>Couldn\\'t load contribution data right now — <a href=\\'https://github.com/${username}\\' target=\\'_blank\\' rel=\\'noopener\\' style=\\'color:var(--fg); border-bottom:1px solid var(--muted-2);\\'>view it on GitHub</a>.</div>';"
+          />
+        </div>
+      `;
+    }
+
+    fetch(API, { cache: 'no-store' })
+      .then(res => {
+        if(!res.ok) throw new Error('bad status ' + res.status);
+        return res.json();
+      })
+      .then(data => {
+        if(data && data.error) throw new Error(data.error);
+        const contributions = data.contributions || [];
+        if(!contributions.length) throw new Error('empty contributions payload');
+        const totalCount = contributions.reduce((sum,c) => sum + c.count, 0);
+        const totalLabel = `${totalCount} contributions in the last year`;
+        try{
+          buildCalendar(contributions, totalLabel);
+        } catch(renderErr){
+          showFallbackImage('render error: ' + renderErr.message);
+        }
+      })
+      .catch(err => {
+        showFallbackImage(err && err.message ? err.message : err);
+      });
   })();
 </script>
 
