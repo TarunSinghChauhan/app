@@ -471,6 +471,7 @@
     transition:color .15s ease, border-color .15s ease;
   }
   .lnk:hover{ color:var(--fg); border-color:var(--fg); }
+  .lnk + .lnk{ margin-left:8px; }
 
   .seeall{
     display:block; text-align:center;
@@ -785,20 +786,20 @@
       </div>
 
       <div class="proj-card">
-        <div class="proj-top" style="--top-bg:#161616; --glow-pos:10% 90%;"><h4>Cinematic, line-by-line<br>AI code walkthroughs</h4></div>
+        <div class="proj-top" style="--top-bg:#161616; --glow-pos:10% 90%;"><h4>Code explained out loud,<br>in English and Hindi</h4></div>
         <div class="proj-body">
           <div class="proj-row1">
             <div>
-              <div class="proj-name">CodePulse</div>
+              <div class="proj-name">CodeCave — Bilingual LLM Code Tutor</div>
               <div class="proj-sub">Personal Project</div>
             </div>
             <span class="badge"><span class="dot"></span>shipped</span>
           </div>
-          <div class="proj-desc">Sends code to LLaMA 4 via Groq, returning structured JSON that powers a live animated walkthrough with variable tracking, call stack, and voice narration across 4 ELI5→Senior explanation levels. Ships an AI bug-injection mode with narrated fix guidance and zero-hallucination JSON contracts.</div>
+          <div class="proj-desc">Bilingual (English/Hindi) LLM code tutor that turns pasted Python/JavaScript into spoken step-by-step explanations, using a strict JSON output schema, server-side validation, and prompt-injection mitigation so malformed output never reaches the UI. Provider-fallback layer (Gemini models → Groq) with runtime model discovery and 503/429 retries, plus response caching and a rule-based offline explainer for free-tier resilience; API keys stay server-side.</div>
           <div class="tech-row">
-            <span class="tech-tag">Next.js 14</span><span class="tech-tag">TypeScript</span><span class="tech-tag">Groq · LLaMA 4</span><span class="tech-tag">Framer Motion</span><span class="tech-tag">Web Speech API</span>
+            <span class="tech-tag">Gemini API</span><span class="tech-tag">Groq API</span><span class="tech-tag">Node.js (Vercel Serverless)</span><span class="tech-tag">JavaScript</span><span class="tech-tag">Web Speech API</span><span class="tech-tag">Web Workers</span>
           </div>
-          <div class="proj-links"><a class="lnk" href="https://github.com/TarunSinghChauhan/CodePulse" target="_blank" rel="noopener">GitHub ↗</a></div>
+          <div class="proj-links"><a class="lnk" href="https://github.com/TarunSinghChauhan/codecave" target="_blank" rel="noopener">GitHub ↗</a><a class="lnk" href="https://trustcodecave.vercel.app" target="_blank" rel="noopener">Live ↗</a></div>
         </div>
       </div>
 
