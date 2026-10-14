@@ -268,8 +268,11 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
 (function(){
 /* ---------- config ---------- */
 var GH_USER='TarunSinghChauhan';
-// Point this at YOUR existing visitor-counter endpoint (must return JSON like {"count":123}).
-var COUNTER_URL='/api/visitors';
+// Visitor counter (single-file, no backend): same free counter as your old portfolio first, counterapi.dev as backup.
+var COUNTERS=[
+  {hit:'https://countapi.mileshilliard.com/api/v1/hit/tarunsinghchauhan-dev-portfolio',get:'https://countapi.mileshilliard.com/api/v1/get/tarunsinghchauhan-dev-portfolio',pick:function(d){return d&&d.value}},
+  {hit:'https://api.counterapi.dev/v1/tarunchauhan-portfolio/visits/up',get:'https://api.counterapi.dev/v1/tarunchauhan-portfolio/visits',pick:function(d){return d&&(d.count!=null?d.count:d.value)}}
+];
 
 /* ---------- clock ---------- */
 var clock=document.getElementById('clock');
@@ -278,12 +281,23 @@ tick();setInterval(tick,1000);
 document.getElementById('yr').textContent=new Date().getFullYear();
 
 /* ---------- visitor counter ---------- */
-function showCount(n){var s=Number(n).toLocaleString('en-IN');['visits','visits2'].forEach(function(id){document.getElementById(id).textContent=s})}
+function showCount(n){var s=Number(n).toLocaleString('en-IN');['visits','visits2'].forEach(function(id){var e=document.getElementById(id);if(e)e.textContent=s})}
+function hideCount(){['visits','visits2'].forEach(function(id){var e=document.getElementById(id);if(e&&e.parentNode)e.parentNode.style.display='none'})}
 (function(){
   var seen=false;try{seen=sessionStorage.getItem('v_counted')==='1'}catch(e){}
-  fetch(COUNTER_URL,{method:seen?'GET':'POST'}).then(function(r){return r.json()}).then(function(d){
-    if(d&&d.count!=null){showCount(d.count);try{sessionStorage.setItem('v_counted','1')}catch(e){}}
-  }).catch(function(){});
+  function j(url){
+    var c=new AbortController(),t=setTimeout(function(){c.abort()},5000);
+    return fetch(url,{cache:'no-store',signal:c.signal}).then(function(r){clearTimeout(t);if(!r.ok)throw new Error(r.status);return r.json()});
+  }
+  function valid(n){n=Number(n);return isFinite(n)&&n>0?n:NaN}
+  function tryProvider(i){
+    if(i>=COUNTERS.length)return Promise.reject(new Error('all counters failed'));
+    var p=COUNTERS[i];
+    // new session -> increment; same session -> just read (and create if it doesn't exist yet)
+    var req=seen?j(p.get).catch(function(){return j(p.hit)}):j(p.hit);
+    return req.then(function(d){var n=valid(p.pick(d));if(isNaN(n))throw new Error('bad');return n}).catch(function(){return tryProvider(i+1)});
+  }
+  tryProvider(0).then(function(n){showCount(n);try{sessionStorage.setItem('v_counted','1')}catch(e){}}).catch(hideCount);
 })();
 
 /* ---------- GitHub contribution graph: real snapshot, refreshed live when possible ---------- */
